@@ -34,7 +34,7 @@ library(dplyr)
 library(zoo)
 library(tidyverse)
 library(panelr)
-
+library(xts)
 
 
 ##package de la banque mondiale
@@ -98,39 +98,25 @@ fredr(series_id = "DCOILBRENTEU", observation_start = as.Date("1990-01-01"), obs
 oil_price = fredr(series_id = "DCOILBRENTEU", observation_start = as.Date("1990-01-01"), observation_end = as.Date("2020-01-01"))
 oil_price
 oil_price <- arrange(oil_price,date)
+oilprice=drop_na(oil_price,value)
+oil=xts(oilprice$value, order.by = oilprice$date)
+oil_q=apply.quarterly(oil, mean)
+quarterly <- aggregate(oil_q, nfrequency = 4)
 
-oil_price$date=as.Date(oil_price$date, format="%Y-%m-%d")
-oil_price$qdate=as.yearqtr(oil_price$date)
+#oil_price$date=as.Date(oil_price$date, format="%Y-%m-%d")
+#oil_price$qdate=as.yearqtr(oil_price$date)
 
-i =subset(oil_price, select = c(value, qdate))
-qoil = i %>%
-	group_by(qdate)%>%
-	summarise_all(mean)
-qoil
+#i =subset(oil_price, select = c(value, qdate))
+#qoil = i %>%
+#	group_by(qdate)%>%
+#	summarise_all(mean)
+#qoil
 
-qoil <- i %>% 
-	group_by(qdate) %>% 
-	summarise(across(everything(), mean), .groups = 'drop')  %>%
-	as.data.frame()
-qoil
-
-
-inf$time=paste(inf$time,"-01", sep="")
-inf$time=as.Date(inf$time, format="%Y-%m-%d")
-inf$qdate=as.yearqtr(inf$time)
-
-i =subset(inf, select = c(geo, qdate, values))
-
-inf_q <- i %>% group_by(geo, qdate) %>% 
-  summarise(across(everything(), mean),
-            .groups = 'drop')  %>%
-  as.data.frame()
-inf_q
-
-inf=inf_q
-
-
-
+#qoil <- i %>% 
+#	group_by(qdate) %>% 
+#	summarise(across(everything(), mean), .groups = 'drop')  %>%
+#	as.data.frame()
+#qoil
 
 
 ###Wage 
@@ -154,8 +140,8 @@ write_xlsx(inf,"D:/Bureau/inflation.xlsx")
 
 
 inf_quarter <- inf %>%
-group_by(qdate) %>%
-print(inf_quarter,n=100)
+  group_by(qdate) %>%
+  print(inf_quarter,n=100)
 
 test=subset(inf, select = c(geo, time, values))
 test
