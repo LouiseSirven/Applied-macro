@@ -35,12 +35,15 @@ library(zoo)
 library(tidyverse)
 library(panelr)
 library(xts)
-
+library(ggplot2)
+library(dplyr)
 
 ##package de la banque mondiale
 #install.packages("WDI", dependancies = True)
 #library(WDI)
 
+#Selection des pays
+pays<-c("FR","IT","EU15","LV","EU27_2020","EA20","EA19","EU28")
 
 ###visualisation des données
 check_access_to_data
@@ -62,10 +65,13 @@ test <- get_eurostat(id="sdg_07_50")
 test
 
 
-###GDP : previous year prices (volume), in euro
-gdp <- get_eurostat(id="namq_10_gdp", time_format="num", filters = list(unit="PYP_MEUR",s_adj=("NSA")))
+###GDP : previous year prices (volume), in euro #selectionner un seul item par pays
+gdp <- get_eurostat(id="namq_10_gdp", time_format="num", filters = list(unit="PYP_MEUR",s_adj=("NSA"),na_item="B1GQ"))
 gdp
 gdp[,5]
+gdp_s<-gdp%>% filter(geo==pays) #Meme chose avec les bons pays selectionnes
+ggplot(gdp_s,aes(x=time, y=values, color=geo, label=geo))+geom_point()+geom_line()
+
 
 ###Inflation (MONTHLY -> changed in quarterly)
 inf <- get_eurostat(id="prc_hicp_mmor", time_format="num", filters = list(unit="RCH_M",coicop="CP00"))
@@ -84,39 +90,31 @@ inf_q <- i %>% group_by(geo, qdate) %>%
 inf_q
 
 inf=inf_q
+inf_s<-inf%>% filter(geo==pays) #Meme chose avec les bons pays selectionnes
+ggplot(inf_s,aes(x=qdate, y=values, color=geo, label=geo))+geom_point()+geom_line()
 
 
-###Unemployment rate (%of active population)
+###Unemployment rate (%of active population), A voir pour selectionner le bon age
 un <- get_eurostat(id="une_rt_q_h", time_format="num", filters = list(unit="PC_ACT",s_adj=("NSA")))
 un
+un_s<-un%>% filter(geo==pays) #Meme chose avec les bons pays selectionnes
+ggplot(un_s,aes(x=time, y=values, color=geo, label=geo))+geom_point()
 
-
-###Oil price (Brent europe)-> journalier à mettre en quartely
+###Oil price (Brent europe)
 
 fredr_set_key("73a241b47839f9dd3a35764f8db93ece")
 fredr(series_id = "DCOILBRENTEU", observation_start = as.Date("1990-01-01"), observation_end = as.Date("2020-01-01"))
 oil_price = fredr(series_id = "DCOILBRENTEU", observation_start = as.Date("1990-01-01"), observation_end = as.Date("2020-01-01"))
 oil_price
 oil_price <- arrange(oil_price,date)
-oilprice=drop_na(oil_price,value)
+oilprice=drop_na(oil_price,value)#retrait des valeurs manquantes
 oil=xts(oilprice$value, order.by = oilprice$date)
-oil_q=apply.quarterly(oil, mean)
+oil_q=apply.quarterly(oil, mean)#donn�es trimestrielles
 
-
-#oil_price$date=as.Date(oil_price$date, format="%Y-%m-%d")
-#oil_price$qdate=as.yearqtr(oil_price$date)
-
-#i =subset(oil_price, select = c(value, qdate))
-#qoil = i %>%
-#	group_by(qdate)%>%
-#	summarise_all(mean)
-#qoil
-
-#qoil <- i %>% 
-#	group_by(qdate) %>% 
-#	summarise(across(everything(), mean), .groups = 'drop')  %>%
-#	as.data.frame()
-#qoil
+dev.off()
+par(mar=c(4,4,3,3))#ajustement des marges
+plot(oil_q, ylab="Oil price", xlab='Date',xaxt="n")
+axis(side=1,at=seq(1990,2019,4))
 
 
 ###Wage 
