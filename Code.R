@@ -76,7 +76,10 @@ gdp <- arrange(gdp,time)
 
 gdp
 gdp[,5]
-gdp_s<-gdp%>% filter(geo==pays) #Meme chose avec les bons pays selectionnes
+gdp_s<-gdp%>% filter(geo=="EA19") #Meme chose avec les bons pays selectionnes
+#la timeserie 
+gdpts <- ts(gdp_s$values, start=c(1975,01), end=c(2022,04), frequency=4)
+plot(gdpts) #affichage timeserie
 ggplot(gdp_s,aes(x=time, y=values, color=geo, label=geo))+geom_point()+geom_line()
 
 ###Inflation (MONTHLY -> changed in quarterly)
@@ -96,14 +99,15 @@ inf_q <- i %>% group_by(geo, qdate) %>%
 inf_q
 
 inf=inf_q
-inf_s<-inf%>% filter(geo==pays) #Meme chose avec les bons pays selectionnes
-ggplot(inf_s,aes(x=qdate, y=values, color=geo, label=geo))+geom_point()+geom_line() + 
+inf_s<-inf%>% filter(geo=="EA19") #Meme chose avec les bons pays selectionnes
+#la timeserie 
+infts <- ts(inf_s$values, start=c(1996,01), end=c(2023,01), frequency=4)
+plot(infts) #affichage timeserie
+ggplot(inf_s,aes(x=qdate, y=values, color=geo, label=geo))+geom_point()+geom_line()
   
-  
-  ###Unemployment rate (%of active population), A voir pour selectionner le bon age
-  un <- get_eurostat(id="une_rt_q_h", time_format="num")
-un <- un %>%
-  filter(age == "Y15-74", sex == "T", s_adj=="NSA", unit=="PC_ACT")
+###Unemployment rate (%of active population), A voir pour selectionner le bon age
+un <- get_eurostat(id="une_rt_q_h", time_format="num")
+un <- un %>%filter(age == "Y15-74", sex == "T", s_adj=="NSA", unit=="PC_ACT")
 un_s<-un%>% filter(geo==pays) #Meme chose avec les bons pays selectionnes
 
 ggplot(un_s,aes(x=time, y=values, color=geo, label=geo))+geom_point()
