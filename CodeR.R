@@ -101,7 +101,7 @@ oil_price <- arrange(oil_price,date)
 oilprice=drop_na(oil_price,value)
 oil=xts(oilprice$value, order.by = oilprice$date)
 oil_q=apply.quarterly(oil, mean)
-quarterly <- aggregate(oil_q, nfrequency = 4)
+
 
 #oil_price$date=as.Date(oil_price$date, format="%Y-%m-%d")
 #oil_price$qdate=as.yearqtr(oil_price$date)
