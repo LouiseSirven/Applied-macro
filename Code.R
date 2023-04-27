@@ -85,7 +85,7 @@ plot(gdpts)
 #affichage non time serie
 ggplot(gdp_s,aes(x=time, y=values, color=geo, label=geo))+geom_point()+geom_line()
 
-###Inflation (MONTHLY -> changed in quarterly)
+###Inflation
 inf <- get_eurostat(id="prc_hicp_mmor", time_format="num", filters = list(unit="RCH_M",coicop="CP00"))
 inf
 inf <- arrange(inf,time)
@@ -105,8 +105,7 @@ inf=inf_q
 inf_s<-inf%>% filter(geo=="EA19") #Meme chose avec les bons pays selectionnes
 #bonnes dates
 inf_s<-inf_s[-c(1:4), ]
-inf_s<-inf_s[-c(97
-                :109), ]
+inf_s<-inf_s[-c(97:109), ]
 #la timeserie 
 infts <- ts(inf_s$values, start=c(1997,01), end=c(2019,04), frequency=4)
 plot(infts) #affichage timeserie
@@ -120,7 +119,58 @@ un_s<-un%>% filter(geo==pays) #Meme chose avec les bons pays selectionnes
 
 ggplot(un_s,aes(x=time, y=values, color=geo, label=geo))+geom_point()
 
-###Oil price (Brent europe)
+################# SALAIRE ######################
+w <- get_eurostat(id="namq_10_gdp", time_format="num", filters = list(unit="CP_MEUR",s_adj=("NSA"),na_item="D11", geo="EA19"))
+w <- arrange(w,time)
+print(w,n=150)
+#Les bonnes variables
+w_s<-w%>% filter(geo=="EA19") #Meme chose avec les bons pays selectionnes
+#bonnes dates
+w_s<-w_s[-c(1:88),]
+w_s<-w_s[-c(93:104),]
+#transformation en time series
+wts=ts(w_s$values,start=c(1997,01), end=c(2019,04), frequency=4)
+wts
+
+################# EURODOLLAR ################### -> à mettre en quarterly
+eurodol <- get_eurostat(id="ERT_BIL_EUR_M", filters = list(currency="USD"))
+print(eurodol, n=200)
+eurodol <- arrange(eurodol,time)
+eurodol$time=paste(eurodol$time,"-01", sep="")
+eurodol$time=as.Date(eurodol$time,format="%Y-%m-%d")
+eurodol$qdate=as.yearqtr(eurodol$time)
+#Les bonnes variables
+eurodol<-eurodol%>% filter(statinfo=="AVG")
+i =subset(eurodol, select = c(qdate, values))
+
+eurodol_q <- i %>% group_by(qdate) %>% 
+  summarise(across(everything(), mean),
+            .groups = 'drop')  %>%
+  as.data.frame()
+eurodol_q
+
+#bonnes dates
+eurodol_q<-eurodol_q[-c(1:104), ]
+eurodol_q<-eurodol_q[-c(93:105), ]
+#la timeserie pour le prix du petrole
+colnames(eurodol_q) <- c("valeur")
+eurodolts <- ts(eurodol_q$valeur, start=c(1997,01), end=c(2019,4), frequency=4)
+plot(eurodolts) #affichage timeserie
+
+
+
+################# TAUX D'INTERET ###############
+fredr_set_key("73a241b47839f9dd3a35764f8db93ece")
+ti=fredr(series_id = "IR3TIB01EZQ156N", observation_start = as.Date("1990-01-01"), observation_end = as.Date("2020-01-01"))
+ti <- arrange(ti,time)
+ti
+#bonnes dates
+ti<-ti[-c(1:12), ]
+ti<-ti[-c(93), ]
+tits <- ts(ti$value, start=c(1997,01), end=c(2019,4), frequency=4)
+plot(tits) #affichage timeserie
+
+###Oil price (Brent europe)###############
 
 fredr_set_key("73a241b47839f9dd3a35764f8db93ece")
 fredr(series_id = "DCOILBRENTEU", observation_start = as.Date("1990-01-01"), observation_end = as.Date("2020-01-01"))
@@ -202,3 +252,18 @@ infdec <- decompose(infts)
 dinf.ts <- diff(infts,1)
 plot(infdec)
 adf.test(dinf.ts) # Dickey-Fuller pvalue=0.01 OK
+
+wdec <- decompose(wts)
+dw.ts <- diff(wts,1)
+plot(wdec)
+adf.test(dw.ts) # Dickey-Fuller pvalue= NOK
+
+eurodoldec <- decompose(eurodolts)
+deurodol.ts <- diff(eurodolts,1)
+plot(eurodoldec)
+pp.test(deurodol.ts) # Dickey-Fuller pvalue= ETRANGE
+
+tidec <- decompose(tits)
+dti.ts <- diff(tits,1)
+plot(tidec)
+adf.test(dti.ts) # Dickey-Fuller pvalue=0.01 OK
