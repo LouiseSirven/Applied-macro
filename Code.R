@@ -72,14 +72,16 @@ test
 ###GDP : previous year prices (volume), in euro
 gdp <- get_eurostat(id="namq_10_gdp", time_format="num", filters = list(unit="PYP_MEUR",s_adj=("NSA"),na_item="B1GQ"))
 gdp <- arrange(gdp,time)
-
-
 gdp
 gdp[,5]
-gdp_s<-gdp%>% filter(geo=="EA19") #Meme chose avec les bons pays selectionnes
+gdp_s<-gdp %>% filter(geo=="EA19") #Meme chose avec les bons pays selectionnes
+#bonnes dates
+gdp_s<-gdp_s[-c(1:84), ]
+gdp_s<-gdp_s[-c(97:108), ]
 #la timeserie 
-gdpts <- ts(gdp_s$values, start=c(1975,01), end=c(2022,04), frequency=4)
+gdpts <- ts(gdp_s$values, start=c(1996,01), end=c(2019,04), frequency=4)
 plot(gdpts) #affichage timeserie
+#affichage non time serie
 ggplot(gdp_s,aes(x=time, y=values, color=geo, label=geo))+geom_point()+geom_line()
 
 ###Inflation (MONTHLY -> changed in quarterly)
@@ -100,9 +102,12 @@ inf_q
 
 inf=inf_q
 inf_s<-inf%>% filter(geo=="EA19") #Meme chose avec les bons pays selectionnes
+#bonnes dates
+inf_s<-inf_s[-c(97:109), ]
 #la timeserie 
-infts <- ts(inf_s$values, start=c(1996,01), end=c(2023,01), frequency=4)
+infts <- ts(inf_s$values, start=c(1996,01), end=c(2019,04), frequency=4)
 plot(infts) #affichage timeserie
+#Affichage non time serie
 ggplot(inf_s,aes(x=qdate, y=values, color=geo, label=geo))+geom_point()+geom_line()
   
 ###Unemployment rate (%of active population), A voir pour selectionner le bon age
@@ -119,11 +124,19 @@ fredr(series_id = "DCOILBRENTEU", observation_start = as.Date("1990-01-01"), obs
 oil_price = fredr(series_id = "DCOILBRENTEU", observation_start = as.Date("1990-01-01"), observation_end = as.Date("2020-01-01"))
 oil_price
 oil_price <- arrange(oil_price,date)
-oilprice=drop_na(oil_price,value)#retrait des valeurs manquantes
+#bonnes dates
+oil_price<-oil_price[-c(1:1565), ]
+oil_price<-oil_price[-c(6263), ]
+#retrait des valeurs manquantes
+oilprice=drop_na(oil_price,value)
+#Format trimestriel
 oil=xts(oilprice$value, order.by = oilprice$date)
 oil_q=apply.quarterly(oil, mean)#donnees trimestrielles
+#bonnes dates
+oil_q<-gdp_s[-c(1:84), ]
+oil_q<-gdp_s[-c(97:108), ]
 #la timeserie pour le prix du petrole
-oilts <- ts(oil_q$..2, start=c(1990,01), end=c(2019,4), frequency=4)
+oilts <- ts(oil_q$..2, start=c(1996,01), end=c(2019,4), frequency=4)
 plot(oilts) #affichage timeserie
 #affichage serie normale
 dev.off()
