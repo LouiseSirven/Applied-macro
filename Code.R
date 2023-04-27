@@ -80,7 +80,8 @@ gdp_s<-gdp_s[-c(1:88), ]
 gdp_s<-gdp_s[-c(93:104), ]
 #la timeserie 
 gdpts <- ts(gdp_s$values, start=c(1997,01), end=c(2019,04), frequency=4)
-plot(gdpts) #affichage timeserie
+#affichage timeserie
+plot(gdpts)
 #affichage non time serie
 ggplot(gdp_s,aes(x=time, y=values, color=geo, label=geo))+geom_point()+geom_line()
 
@@ -127,25 +128,22 @@ oil_price = fredr(series_id = "DCOILBRENTEU", observation_start = as.Date("1990-
 oil_price
 oil_price <- arrange(oil_price,date)
 #bonnes dates
-oil_price<-oil_price[-c(1:1565), ]
-oil_price<-oil_price[-c(6263), ]
+oil_price<-oil_price[-c(1:1827), ]
+oil_price<-oil_price[-c(6001), ]
 #retrait des valeurs manquantes
 oilprice=drop_na(oil_price,value)
 #Format trimestriel
 oil=xts(oilprice$value, order.by = oilprice$date)
 oil_q=apply.quarterly(oil, mean)#donnees trimestrielles
-#bonnes dates
-oil_q<-gdp_s[-c(1:84), ]
-oil_q<-gdp_s[-c(97:108), ]
 #la timeserie pour le prix du petrole
-oilts <- ts(oil_q$..2, start=c(1996,01), end=c(2019,4), frequency=4)
+colnames(oil_q) <- c("valeur")
+oilts <- ts(oil_q$valeur, start=c(1997,01), end=c(2019,4), frequency=4)
 plot(oilts) #affichage timeserie
 #affichage serie normale
 dev.off()
 par(mar=c(4,4,3,3))#ajustement des marges
 plot(oil_q, ylab="Oil price", xlab='Date',xaxt="n")
 axis(side=1,at=seq(1990,2019,4))
-
 
 colnames(oil_q) <- c("time","value")
 
@@ -184,4 +182,23 @@ inf_quarter <- inf %>%
 test=subset(inf, select = c(geo, time, values))
 test
 
+#####################################################################
+###################### Stationnarisation ############################
+#####################################################################
 
+oildec <- decompose(doil.ts)
+doil.ts <- diff(oilts,1)
+plot(oildec)
+adf.test(doil.ts) # Dickey-Fuller pvalue=0.01 OK
+
+gdpdec <- decompose(ddgdp.ts)
+plot(gdpdec)
+dgdp.ts <- diff(gdpts,1)
+ddgdp.ts <- diff(dgdp.ts,1)
+dgdp.ts<-ddgdp.ts
+adf.test(dgdp.ts) # Dickey-Fuller pvalue=0.01 OK
+
+infdec <- decompose(infts)
+dinf.ts <- diff(infts,1)
+plot(infdec)
+adf.test(dinf.ts) # Dickey-Fuller pvalue=0.01 OK
