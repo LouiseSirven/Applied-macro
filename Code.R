@@ -76,10 +76,10 @@ gdp
 gdp[,5]
 gdp_s<-gdp %>% filter(geo=="EA19") #Meme chose avec les bons pays selectionnes
 #bonnes dates
-gdp_s<-gdp_s[-c(1:84), ]
-gdp_s<-gdp_s[-c(97:108), ]
+gdp_s<-gdp_s[-c(1:88), ]
+gdp_s<-gdp_s[-c(93:104), ]
 #la timeserie 
-gdpts <- ts(gdp_s$values, start=c(1996,01), end=c(2019,04), frequency=4)
+gdpts <- ts(gdp_s$values, start=c(1997,01), end=c(2019,04), frequency=4)
 plot(gdpts) #affichage timeserie
 #affichage non time serie
 ggplot(gdp_s,aes(x=time, y=values, color=geo, label=geo))+geom_point()+geom_line()
@@ -103,9 +103,11 @@ inf_q
 inf=inf_q
 inf_s<-inf%>% filter(geo=="EA19") #Meme chose avec les bons pays selectionnes
 #bonnes dates
-inf_s<-inf_s[-c(97:109), ]
+inf_s<-inf_s[-c(1:4), ]
+inf_s<-inf_s[-c(97
+                :109), ]
 #la timeserie 
-infts <- ts(inf_s$values, start=c(1996,01), end=c(2019,04), frequency=4)
+infts <- ts(inf_s$values, start=c(1997,01), end=c(2019,04), frequency=4)
 plot(infts) #affichage timeserie
 #Affichage non time serie
 ggplot(inf_s,aes(x=qdate, y=values, color=geo, label=geo))+geom_point()+geom_line()
