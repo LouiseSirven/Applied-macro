@@ -1,12 +1,15 @@
-#PROJET APPLIED MACROECONOMETRICS
+#PROJET APPLIED MACROECONOMETRICS V28/04 10h30
+
 #Notes : Ne pas oublier de citer les packages R dans le fichier final
 #voir : https://ropengov.github.io/eurostat/articles/eurostat_tutorial.html
 #(c'est le tuto pour utiliser le package eurostat)
 
 #TO-DO :
-#Chercher les donnees pour le prix du petrole
-#Mettre l'inflation en trimestriel
-#Mettre les variables au propre pour pouvoir les utiliser apres
+#Mettre les variables au propre pour pouvoir les utiliser après
+#il faut standardiser les variables
+#trouver le pb des dates du chomage (un_model a des dates au dela de 2023)
+#mettre au propre dans le code le taux d'interet
+
 
 
 #######################################################
@@ -86,7 +89,7 @@ plot(gdpts)
 #affichage non time serie
 ggplot(gdp_s,aes(x=time, y=values, color=geo, label=geo))+geom_point()+geom_line()
 
-###Inflation#################################################################################
+###INFLATION#################################################################################
 inf <- get_eurostat(id="prc_hicp_mmor", time_format="num", filters = list(unit="RCH_M",coicop="CP00"))
 inf
 inf <- arrange(inf,time)
@@ -113,20 +116,15 @@ plot(infts) #affichage timeserie
 #Affichage non time serie
 ggplot(inf_s,aes(x=qdate, y=values, color=geo, label=geo))+geom_point()+geom_line()
 
-
-###Unemployment rate (%of active population), A voir pour selectionner le bon age ####################
-
-un <- read_excel("/Users/romainlebeau/Downloads/unemployment_eu_fred.xls")
-ggplot(un,aes(x=observation_date, y=values))+geom_point()
-un <- ts(un$values, start=c(1990,07), end=c(2022,10), frequency=4)
-plot(un)
-
-
-
-#un <- get_eurostat(id="une_rt_q_h", time_format="num")
-#un <- un %>%filter(age == "Y15-74", sex == "T", s_adj=="NSA", unit=="PC_ACT")
-#un_s<-un%>% filter(geo=="EU28") #Meme chose avec les bons pays selectionnes
-#ggplot(un_s,aes(x=time, y=values, color=geo, label=geo))+geom_point()
+########## CHOMAGE ############# (%of active population)
+un <- get_eurostat(id="une_rt_q_h")
+un <- un %>%filter(age == "Y15-74", sex == "T", s_adj=="NSA", unit=="PC_ACT", geo=="EA19")
+#bonnes dates
+un=arrange(un,time)
+un=un[-c(93:96),]
+#timeseries
+tsun = ts(un$values, start=c(1997,01), end=c(2019,4), frequency=4)
+plot(tsun)
 
 ################# SALAIRE ######################
 w <- get_eurostat(id="namq_10_gdp", time_format="num", filters = list(unit="CP_MEUR",s_adj=("NSA"),na_item="D11", geo="EA19"))
@@ -216,30 +214,6 @@ rownames(oil_q) <- 1:nrow(oil_q)
 test <- cbind(newColName = rownames(test), test)
 rownames(test) <- 1:nrow(test)
 
-
-
-
-#################################################################################
-#afficher premiere (ou autre) colonne
-test=inf[,4]
-test
-unique(test)
-print(unique(test),n=40)
-
-#Exporter les donnees en excel :
-library("writexl")
-write_xlsx(the dataframe name,"path to store the Excel file\\file name.xlsx")
-
-write_xlsx(inf,"D:/Bureau/inflation.xlsx")
-
-
-inf_quarter <- inf %>%
-  group_by(qdate) %>%
-  print(inf_quarter,n=100)
-
-test=subset(inf, select = c(geo, time, values))
-test
-
 #####################################################################
 ###################### Stationnarisation ############################
 #####################################################################
@@ -262,11 +236,10 @@ dinf.ts <- diff(infts,differences = 2)
 plot(infdec)
 adf.test(dinf.ts) # Dickey-Fuller pvalue=0.01 OK
 
-#A revoir
-un_dec <- decompose(un)
-diff_un.ts <- diff(un,1)
+un_dec <- decompose(tsun)
+dun.ts <- diff(tsun,differences = 2)
 plot(un_dec)
-adf.test(diff_un.ts) # Dickey-Fuller pvalue=0.01 OK
+adf.test(dun.ts) # Dickey-Fuller pvalue=0.02 OK
 
 wdec <- decompose(wts)
 dw.ts <- diff(wts,differences = 2)
@@ -303,14 +276,8 @@ model <- un_model %>%
   inner_join(oil_model, by ="date")
 
 #jointure des tables
-sv <- cbind(dun.ts,deurodol.ts, dw.ts, dinf.ts, dgdp.ts, doil.ts, dti.ts)
-colnames(sv) <- c("unemployment", "ex_rate", "wage", "infla", "gdp", "oil", "taux_int")
-
-sv <- cbind(deurodol.ts, dw.ts, dinf.ts, dgdp.ts, doil.ts, dti.ts)
-colnames(sv) <- c("ex_rate", "wage", "infla", "gdp", "oil", "taux_int")
+sv <- cbind(time(dinf.ts), dun.ts,deurodol.ts, dw.ts, dinf.ts, dgdp.ts, doil.ts, dti.ts)
+colnames(sv) <- c("date","unemployment", "ex_rate", "wage", "infla", "gdp", "oil", "taux_int")
 
 #colnames(model) <- c("unemployment","date", "ex_rate", "wage", "infla", "gdp", "oil", "taux_int")
 
-#il faut standardiser les variables
-#trouver le pb des dates du chomage (un_model a des dates au dela de 2023)
-#mettre au propre dans le code le taux d'interet
