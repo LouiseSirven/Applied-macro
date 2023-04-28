@@ -4,9 +4,9 @@
 #(c'est le tuto pour utiliser le package eurostat)
 
 #TO-DO :
-#Chercher les données pour le prix du pétrole
+#Chercher les donnees pour le prix du petrole
 #Mettre l'inflation en trimestriel
-#Mettre les variables au propre pour pouvoir les utiliser après
+#Mettre les variables au propre pour pouvoir les utiliser apres
 
 
 #######################################################
@@ -40,6 +40,7 @@ library(xts)
 library(ggplot2)
 library(dplyr)
 library(tseries)
+library(readxl)
 
 
 ##package de la banque mondiale
@@ -69,7 +70,7 @@ test <- get_eurostat(id="sdg_07_50")
 test
 
 
-###GDP : previous year prices (volume), in euro
+###GDP : previous year prices (volume), in euro#################################################################################
 gdp <- get_eurostat(id="namq_10_gdp", time_format="num", filters = list(unit="PYP_MEUR",s_adj=("NSA"),na_item="B1GQ"))
 gdp <- arrange(gdp,time)
 gdp
@@ -85,7 +86,7 @@ plot(gdpts)
 #affichage non time serie
 ggplot(gdp_s,aes(x=time, y=values, color=geo, label=geo))+geom_point()+geom_line()
 
-###Inflation
+###Inflation#################################################################################
 inf <- get_eurostat(id="prc_hicp_mmor", time_format="num", filters = list(unit="RCH_M",coicop="CP00"))
 inf
 inf <- arrange(inf,time)
@@ -111,13 +112,21 @@ infts <- ts(inf_s$values, start=c(1997,01), end=c(2019,04), frequency=4)
 plot(infts) #affichage timeserie
 #Affichage non time serie
 ggplot(inf_s,aes(x=qdate, y=values, color=geo, label=geo))+geom_point()+geom_line()
-  
-###Unemployment rate (%of active population), A voir pour selectionner le bon age
-un <- get_eurostat(id="une_rt_q_h", time_format="num")
-un <- un %>%filter(age == "Y15-74", sex == "T", s_adj=="NSA", unit=="PC_ACT")
-un_s<-un%>% filter(geo==pays) #Meme chose avec les bons pays selectionnes
 
-ggplot(un_s,aes(x=time, y=values, color=geo, label=geo))+geom_point()
+
+###Unemployment rate (%of active population), A voir pour selectionner le bon age ####################
+
+un <- read_excel("/Users/romainlebeau/Downloads/unemployment_eu_fred.xls")
+ggplot(un,aes(x=observation_date, y=values))+geom_point()
+un <- ts(un$values, start=c(1990,07), end=c(2022,10), frequency=4)
+plot(un)
+
+
+
+#un <- get_eurostat(id="une_rt_q_h", time_format="num")
+#un <- un %>%filter(age == "Y15-74", sex == "T", s_adj=="NSA", unit=="PC_ACT")
+#un_s<-un%>% filter(geo=="EU28") #Meme chose avec les bons pays selectionnes
+#ggplot(un_s,aes(x=time, y=values, color=geo, label=geo))+geom_point()
 
 ################# SALAIRE ######################
 w <- get_eurostat(id="namq_10_gdp", time_format="num", filters = list(unit="CP_MEUR",s_adj=("NSA"),na_item="D11", geo="EA19"))
@@ -132,7 +141,7 @@ w_s<-w_s[-c(93:104),]
 wts=ts(w_s$values,start=c(1997,01), end=c(2019,04), frequency=4)
 wts
 
-################# EURODOLLAR ################### -> à mettre en quarterly
+################# EURODOLLAR ###################
 eurodol <- get_eurostat(id="ERT_BIL_EUR_M", filters = list(currency="USD"))
 print(eurodol, n=200)
 eurodol <- arrange(eurodol,time)
@@ -153,8 +162,7 @@ eurodol_q
 eurodol_q<-eurodol_q[-c(1:104), ]
 eurodol_q<-eurodol_q[-c(93:105), ]
 #la timeserie pour le prix du petrole
-colnames(eurodol_q) <- c("valeur")
-eurodolts <- ts(eurodol_q$valeur, start=c(1997,01), end=c(2019,4), frequency=4)
+eurodolts <- ts(eurodol_q$values, start=c(1997,01), end=c(2019,4), frequency=4)
 plot(eurodolts) #affichage timeserie
 
 
@@ -162,7 +170,7 @@ plot(eurodolts) #affichage timeserie
 ################# TAUX D'INTERET ###############
 fredr_set_key("73a241b47839f9dd3a35764f8db93ece")
 ti=fredr(series_id = "IR3TIB01EZQ156N", observation_start = as.Date("1990-01-01"), observation_end = as.Date("2020-01-01"))
-ti <- arrange(ti,time)
+ti <- arrange(ti,time) #ne marche pas
 ti
 #bonnes dates
 ti<-ti[-c(1:12), ]
@@ -170,7 +178,7 @@ ti<-ti[-c(93), ]
 tits <- ts(ti$value, start=c(1997,01), end=c(2019,4), frequency=4)
 plot(tits) #affichage timeserie
 
-###Oil price (Brent europe)###############
+############# Oil price (Brent europe) ###############
 
 fredr_set_key("73a241b47839f9dd3a35764f8db93ece")
 fredr(series_id = "DCOILBRENTEU", observation_start = as.Date("1990-01-01"), observation_end = as.Date("2020-01-01"))
@@ -218,7 +226,7 @@ test
 unique(test)
 print(unique(test),n=40)
 
-#Exporter les données en excel :
+#Exporter les donnees en excel :
 library("writexl")
 write_xlsx(the dataframe name,"path to store the Excel file\\file name.xlsx")
 
@@ -235,35 +243,74 @@ test
 #####################################################################
 ###################### Stationnarisation ############################
 #####################################################################
+###La serie du GDP doit etre differenciee 2 fois pour etre stationnaire -> differencier 2 fois toutes les series
+
 
 oildec <- decompose(doil.ts)
-doil.ts <- diff(oilts,1)
+doil.ts <- diff(oilts,differences = 2)
 plot(oildec)
 adf.test(doil.ts) # Dickey-Fuller pvalue=0.01 OK
 
-gdpdec <- decompose(ddgdp.ts)
+gdpdec <- decompose(gdpts)
 plot(gdpdec)
-dgdp.ts <- diff(gdpts,1)
-ddgdp.ts <- diff(dgdp.ts,1)
-dgdp.ts<-ddgdp.ts
+dgdp.ts <- diff(gdpts,differences = 2)
 adf.test(dgdp.ts) # Dickey-Fuller pvalue=0.01 OK
+plot(dgdp.ts)
 
 infdec <- decompose(infts)
-dinf.ts <- diff(infts,1)
+dinf.ts <- diff(infts,differences = 2)
 plot(infdec)
 adf.test(dinf.ts) # Dickey-Fuller pvalue=0.01 OK
 
+#A revoir
+un_dec <- decompose(un)
+diff_un.ts <- diff(un,1)
+plot(un_dec)
+adf.test(diff_un.ts) # Dickey-Fuller pvalue=0.01 OK
+
 wdec <- decompose(wts)
-dw.ts <- diff(wts,1)
+dw.ts <- diff(wts,differences = 2)
 plot(wdec)
-adf.test(dw.ts) # Dickey-Fuller pvalue= NOK
+adf.test(dw.ts) # Dickey-Fuller pvalue=0.01 OK
 
 eurodoldec <- decompose(eurodolts)
-deurodol.ts <- diff(eurodolts,1)
+deurodol.ts <- diff(eurodolts,differences = 2)
 plot(eurodoldec)
-pp.test(deurodol.ts) # Dickey-Fuller pvalue= ETRANGE
+adf.test(deurodol.ts) # Dickey-Fuller pvalue=0.01 OK
 
 tidec <- decompose(tits)
-dti.ts <- diff(tits,1)
+dti.ts <- diff(tits,differences = 2)
 plot(tidec)
 adf.test(dti.ts) # Dickey-Fuller pvalue=0.01 OK
+
+#####################################################################
+########################### Aggregation #############################
+#####################################################################
+
+un_model <- data.frame(Y=as.matrix(diff_un.ts), date=time(diff_un.ts))
+ti_model <- data.frame(Y=as.matrix(dti.ts), date=time(dti.ts)) #ne marche pas
+xr_model <- data.frame(Y=as.matrix(deurodol.ts), date=time(deurodol.ts))
+w_model <- data.frame(Y=as.matrix(dw.ts), date=time(dw.ts))
+inf_model <- data.frame(Y=as.matrix(dinf.ts), date=time(dinf.ts))
+gdp_model <- data.frame(Y=as.matrix(dgdp.ts), date=time(dgdp.ts))
+oil_model <- data.frame(Y=as.matrix(doil.ts), date=time(doil.ts))
+
+model <- un_model %>% 
+  inner_join(xr_model, by ="date") %>%
+  inner_join(w_model, by ="date") %>%
+  inner_join(inf_model, by ="date") %>%
+  inner_join(gdp_model, by ="date") %>%
+  inner_join(oil_model, by ="date")
+
+#jointure des tables
+sv <- cbind(dun.ts,deurodol.ts, dw.ts, dinf.ts, dgdp.ts, doil.ts, dti.ts)
+colnames(sv) <- c("unemployment", "ex_rate", "wage", "infla", "gdp", "oil", "taux_int")
+
+sv <- cbind(deurodol.ts, dw.ts, dinf.ts, dgdp.ts, doil.ts, dti.ts)
+colnames(sv) <- c("ex_rate", "wage", "infla", "gdp", "oil", "taux_int")
+
+#colnames(model) <- c("unemployment","date", "ex_rate", "wage", "infla", "gdp", "oil", "taux_int")
+
+#il faut standardiser les variables
+#trouver le pb des dates du chomage (un_model a des dates au dela de 2023)
+#mettre au propre dans le code le taux d'interet
