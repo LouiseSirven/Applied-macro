@@ -5,11 +5,9 @@
 #(c'est le tuto pour utiliser le package eurostat)
 
 #TO-DO :
-#Mettre les variables au propre pour pouvoir les utiliser après
 #il faut standardiser les variables
-#trouver le pb des dates du chomage (un_model a des dates au dela de 2023)
-#mettre au propre dans le code le taux d'interet
-
+#trouver le lag
+#structurer  le var
 
 
 #######################################################
