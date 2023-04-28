@@ -5,10 +5,7 @@
 #(c'est le tuto pour utiliser le package eurostat)
 
 #TO-DO :
-#Voir s'il faut changer les donnees en log
-#Etudier differents scenarios avec des chocs de differentes amplitudes (technique de prevision conditionnelle)
-#Comprendre les parametres a prendre en compte pour la local projection et choisir les bons parametres
-#Local projection : comment faire des chocs prolonges mais transitoires
+#Regarder 
 
 
 #######################################################
@@ -87,6 +84,8 @@ gdp_s<-gdp_s[-c(1:88), ]
 gdp_s<-gdp_s[-c(93:104), ]
 #la timeserie 
 gdpts <- ts(gdp_s$values, start=c(1997,01), end=c(2019,04), frequency=4)
+gdp_l <- log(gdpts)
+gdpts<-gdp_l*100
 #affichage timeserie
 plot(gdpts)
 #affichage non time serie
@@ -130,7 +129,6 @@ tsun = ts(un$values, start=c(1997,01), end=c(2019,4), frequency=4)
 plot(tsun)
 
 ################# SALAIRE ######################
-################# SALAIRE ######################
 w <- get_eurostat(id="namq_10_gdp")
 w <- w %>%filter(unit=="CP_MEUR",s_adj==("NSA"),na_item=="D11", geo=="EA19")
 w <- arrange(w,time)
@@ -141,6 +139,8 @@ w_s<-w[-c(1:8),]
 w_s<-w_s[-c(93:104),]
 #transformation en time series
 wts=ts(w_s$values,start=c(1997,01), end=c(2019,04), frequency=4)
+w_l <- log(wts)
+wts<-w_l*100
 wts
 
 
@@ -166,6 +166,8 @@ eurodol_q<-eurodol_q[-c(1:104), ]
 eurodol_q<-eurodol_q[-c(93:105), ]
 #la timeserie pour le prix du petrole
 eurodolts <- ts(eurodol_q$values, start=c(1997,01), end=c(2019,4), frequency=4)
+eurodol_l <- log(eurodolts)
+eurodolts<-eurodol_l*100
 plot(eurodolts) #affichage timeserie
 
 
@@ -199,6 +201,8 @@ oil_q=apply.quarterly(oil, mean)#donnees trimestrielles
 #la timeserie pour le prix du petrole
 colnames(oil_q) <- c("valeur")
 oilts <- ts(oil_q$valeur, start=c(1997,01), end=c(2019,4), frequency=4)
+oil_l <- log(oilts)
+oilts<-oil_l*100
 plot(oilts) #affichage timeserie
 #affichage serie normale
 dev.off()
@@ -326,7 +330,6 @@ linear_plots[[24]]
 linear_plots[[31]]
 linear_plots[[38]]
 linear_plots[[45]]
-
 
 
 #####################################################################
@@ -506,6 +509,7 @@ SVARMod1$Sigma
 new_sigma <- SVARMod1$Sigma * 1.5
 new_SVARMod1 <- SVAR(Model1, Amat = matrice, Bmat = NULL, Sigma= new_sigma, hessian = TRUE, estmethod = c("scoring", "direct"))
 new_SVARMod1$Sigma
+
 
 
 
